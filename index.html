@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+<title>Helen's Family Tree</title>
+<style>
+  :root {
+    --cream: #fef9f0;
+    --gold: #d4a373;
+    --deep-gold: #b8860b;
+    --brown: #6b4e3a;
+    --deep-brown: #3a2518;
+    --green: #10b981;
+    --green-bg: #d1fae5;
+    --green-deep: #059669;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--deep-brown);
+    font-size: 16px;
+    line-height: 1.5;
+    overflow: hidden;
+    background: #2a1d12;
+    min-height: 100vh;
+  }
+
+  .room-bg {
+    position: fixed; inset: 0;
+    background: url('room.png') center/cover no-repeat;
+    background-color: #2a1d12;
+    z-index: 0; pointer-events: none;
+  }
+  .room-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 40%, rgba(255,240,220,0.04), rgba(40,20,10,0.42));
+  }
+
+  .music-toggle {
+    position: fixed; top: 16px; right: 16px;
+    z-index: 6000;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 50%), linear-gradient(160deg, #fef9f0 0%, #f5e6d3 100%);
+    border: 2px solid var(--deep-gold);
+    color: var(--deep-brown);
+    font-size: 1.6rem;
+    cursor: pointer;
+    box-shadow: 0 0 0 2px rgba(184,134,11,0.3), 0 6px 18px rgba(80,40,10,0.35), 0 0 22px rgba(254,230,180,0.7);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; line-height: 1;
+  }
+  .music-toggle:hover { transform: scale(1.08); }
+  .music-toggle:active { transform: scale(0.94); }
+  .music-toggle .slash {
+    display: none; position: absolute;
+    top: 50%; left: 50%;
+    width: 40px; height: 3px;
+    background: #b35a5a; border-radius: 3px;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    box-shadow: 0 0 8px rgba(179,90,90,0.8);
+  }
+  .music-toggle.muted .slash { display: block; }
+  .music-toggle.muted { color: #9a8570; }
+
+  .game-wrapper {
+    position: relative; z-index: 1;
+    width: 100%; height: 100vh;
+    display: flex; flex-direction: column;
+    padding: 12px 14px 14px; gap: 10px;
+  }
+
+  .title-bar {
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    gap: 18px;
+    padding: 10px 20px;
+    margin: 0 auto;
+    max-width: 780px;
+    width: 100%;
+    background: linear-gradient(180deg, rgba(60,35,15,0.55), rgba(60,35,15,0.15));
+    border-radius: 18px;
+    border: 1px solid rgba(212,163,115,0.35);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  .title-tree { flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+  .title-text {
+    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Garamond, Georgia, serif;
+    font-size: 2.2rem; font-weight: 700; letter-spacing: 3px;
+    color: #ffffff;
+    text-shadow: 0 0 4px rgba(0,0,0,0.95), 0 2px 6px rgba(0,0,0,0.9), 0 4px 14px rgba(0,0,0,0.75), 0 0 30px rgba(255,210,120,0.5);
+    line-height: 1.1; text-align: center; white-space: nowrap;
+  }
+  .title-text .helen {
+    color: #ffd88a; font-variant: small-caps; letter-spacing: 4px;
+    text-shadow: 0 0 6px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.9), 0 0 30px rgba(255,210,120,0.9);
+  }
+  .title-text .ft { font-variant: small-caps; letter-spacing: 6px; }
+
+  .main-layout { flex: 1 1 auto; display: flex; gap: 12px; min-height: 0; }
+
+  .cards-panel {
+    flex: 0 0 320px; max-width: 340px;
+    display: flex; flex-direction: column; gap: 6px;
+    background: rgba(254,249,240,0.88);
+    border-radius: 16px; padding: 10px;
+    box-shadow: 0 8px 24px rgba(40,20,10,0.5), inset 0 0 0 2px rgba(212,163,115,0.4);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(212,163,115,0.5);
+    overflow: hidden;
+  }
+  .panel-title {
+    font-size: 0.95rem; font-weight: 700; color: var(--brown);
+    text-align: center; padding-bottom: 5px;
+    border-bottom: 2px solid rgba(212,163,115,0.4);
+    font-variant: small-caps; letter-spacing: 1px;
+  }
+  .cards-list {
+    flex: 1 1 auto; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 7px;
+    padding: 4px 4px 4px 2px;
+  }
+  .cards-list::-webkit-scrollbar { width: 8px; }
+  .cards-list::-webkit-scrollbar-track { background: rgba(212,163,115,0.15); border-radius: 8px; }
+  .cards-list::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 8px; }
+
+  .card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 50%), linear-gradient(160deg, #fef9f0 0%, #f5e6d3 55%, #ede0cc 100%);
+    border-radius: 12px; padding: 11px 13px;
+    font-size: 16px; font-weight: 500;
+    color: var(--deep-brown); line-height: 1.35;
+    box-shadow: 0 0 0 1px rgba(184,134,11,0.25), 0 0 18px rgba(254,230,180,0.5), 0 6px 14px rgba(80,40,10,0.25);
+    cursor: grab; user-select: none; -webkit-user-select: none;
+    touch-action: none;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    animation: sway 3.5s ease-in-out infinite;
+    border: 1px solid rgba(184,134,11,0.35);
+  }
+  .card::before {
+    content: ''; position: absolute; inset: 3px;
+    border: 1px dashed rgba(184,134,11,0.22);
+    border-radius: 9px; pointer-events: none;
+  }
+  .card:nth-child(2n) { animation-delay: -0.6s; }
+  .card:nth-child(3n) { animation-delay: -1.2s; }
+  .card:nth-child(4n) { animation-delay: -1.8s; }
+  .card:nth-child(5n) { animation-delay: -2.4s; }
+  @keyframes sway {
+    0%, 100% { transform: rotate(-0.6deg) translateY(0); }
+    50% { transform: rotate(0.6deg) translateY(-2px); }
+  }
+  .card:hover {
+    box-shadow: 0 0 0 1px rgba(184,134,11,0.5), 0 0 26px rgba(254,230,180,0.9), 0 10px 22px rgba(80,40,10,0.35);
+    transform: scale(1.02);
+    animation-play-state: paused;
+  }
+  .card:active { cursor: grabbing; transform: scale(0.98); }
+  .card.dragging { opacity: 0.32; animation-play-state: paused; }
+  .card.placed {
+    opacity: 0.28; pointer-events: none; animation: none;
+    filter: grayscale(0.5);
+    background: linear-gradient(160deg, #ede0cc 0%, #d8c8b0 100%);
+    text-decoration: line-through;
+    text-decoration-color: rgba(107,78,58,0.5);
+  }
+
+  .card-ghost {
+    position: fixed;
+    background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 50%), linear-gradient(160deg, #fef9f0 0%, #f5e6d3 100%);
+    border: 1px solid rgba(184,134,11,0.55);
+    border-radius: 12px; padding: 11px 13px;
+    font-size: 15px; color: var(--deep-brown);
+    max-width: 240px; line-height: 1.35;
+    box-shadow: 0 18px 40px rgba(40,20,10,0.5), 0 0 30px rgba(254,230,180,0.8);
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%, -50%) translateY(-16px);
+    font-family: Georgia, serif; font-weight: 500;
+  }
+
+  .album-wrap { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-width: 0; }
+  .album {
+    position: relative;
+    width: 100%; max-width: 1000px;
+    height: 100%; max-height: 100%;
+    aspect-ratio: 4 / 3;
+    background: url('album.png') center/100% 100% no-repeat;
+    border-radius: 18px;
+    box-shadow: 0 22px 55px rgba(20,10,0,0.65), 0 0 0 1px rgba(184,134,11,0.4), inset 0 0 80px rgba(80,40,10,0.12);
+    overflow: hidden;
+  }
+  .tree-container { position: absolute; inset: 7% 6% 9% 6%; z-index: 2; }
+  .tree-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+
+  .slot {
+    position: absolute;
+    width: 11%; min-width: 76px;
+    height: 9.5%; min-height: 50px;
+    transform: translate(-50%, -50%);
+    background: rgba(254,249,240,0.94);
+    border: 2px dashed var(--gold);
+    border-radius: 10px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 3px 4px;
+    font-size: 14px; font-weight: 700;
+    color: var(--brown); text-align: center;
+    transition: transform 0.15s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 10px rgba(254,230,180,0.55), 0 3px 8px rgba(80,40,10,0.2);
+    z-index: 3; overflow: hidden;
+    line-height: 1.1; cursor: default;
+    animation: slotGlow 2.6s ease-in-out infinite;
+  }
+  @keyframes slotGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(254,230,180,0.55), 0 3px 8px rgba(80,40,10,0.2); }
+    50% { box-shadow: 0 0 20px rgba(254,230,180,0.9), 0 3px 12px rgba(80,40,10,0.3); }
+  }
+  .slot .slot-number { font-size: 14px; font-weight: 800; color: var(--brown); line-height: 1; display: flex; align-items: center; gap: 3px; }
+  .slot .gender { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; color: white; font-weight: 700; }
+  .slot .gender.male { background: #2563eb; box-shadow: 0 0 8px rgba(37,99,235,0.6); }
+  .slot .gender.female { background: #db2777; box-shadow: 0 0 8px rgba(219,39,119,0.6); }
+  .slot .slot-name { font-size: 12px; font-weight: 700; color: var(--green-deep); display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+  .slot .slot-dates { font-size: 10px; font-weight: 700; color: var(--brown); display: block; font-style: normal; opacity: 0.85; letter-spacing: 0.2px; margin-top: 1px; }
+
+  .slot.drag-over {
+    background: #fff3d6; border-color: var(--deep-gold); border-style: solid;
+    transform: translate(-50%, -50%) scale(1.12);
+    box-shadow: 0 0 32px rgba(255,210,120,1), 0 0 0 5px rgba(212,163,115,0.55);
+    z-index: 10;
+  }
+  .slot.filled {
+    border-style: solid; border-color: var(--green);
+    background: var(--green-bg); animation: none;
+    box-shadow: 0 0 16px rgba(16,185,129,0.65), inset 0 0 0 2px rgba(16,185,129,0.22);
+  }
+  .slot.correct-flash { animation: flashGreen 0.8s ease; }
+  .slot.wrong-flash { animation: flashRed 0.7s ease; }
+  @keyframes flashGreen {
+    0% { background: #6ee7b7; border-color: var(--green-deep); transform: translate(-50%,-50%) scale(1.2); box-shadow: 0 0 44px rgba(16,185,129,1); }
+    100% { background: var(--green-bg); border-color: var(--green); transform: translate(-50%,-50%) scale(1); }
+  }
+  @keyframes flashRed {
+    0% { background: #fecaca; border-color: #dc2626; transform: translate(-50%,-50%) scale(1.15); }
+    30% { background: #fee2e2; border-color: #ef4444; transform: translate(-50%,-50%) translateX(-6px); }
+    60% { transform: translate(-50%,-50%) translateX(6px); }
+    100% { background: rgba(254,249,240,0.94); border-color: var(--gold); transform: translate(-50%,-50%) scale(1); }
+  }
+
+  .plus-symbol {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-size: 22px;
+    font-weight: 900;
+    color: #a0522d;
+    text-shadow: 0 0 4px rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.3);
+    z-index: 5;
+    pointer-events: none;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+
+  .toast {
+    position: fixed; top: 100px; left: 50%;
+    transform: translateX(-50%) translateY(-120%);
+    background: linear-gradient(135deg, #fef9f0, #f5e6d3);
+    color: var(--deep-brown);
+    padding: 13px 30px; border-radius: 60px;
+    font-size: 1.15rem; font-weight: 700;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.4), 0 0 0 2px rgba(212,163,115,0.6);
+    z-index: 5000;
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    opacity: 0; pointer-events: none;
+    border: 1px solid rgba(184,134,11,0.5);
+    white-space: nowrap; max-width: 90vw;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.correct { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #064e3b; }
+  .toast.wrong { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #7f1d1d; }
+
+  .modal {
+    position: fixed; inset: 0;
+    background: rgba(30,15,5,0.8);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 4000; opacity: 0; pointer-events: none;
+    transition: opacity 0.45s ease; padding: 20px;
+  }
+  .modal.active { opacity: 1; pointer-events: auto; }
+  .modal-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 40%), linear-gradient(160deg, #fef9f0 0%, #f5e6d3 60%, #ede0cc 100%);
+    border-radius: 36px;
+    padding: 44px 40px 40px;
+    text-align: center;
+    max-width: 620px; width: 100%;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 4px rgba(184,134,11,0.4), inset 0 0 0 1px rgba(255,255,255,0.7);
+    border: 1px solid rgba(184,134,11,0.55);
+    transform: scale(0.8) translateY(30px);
+    transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .modal.active .modal-card { transform: scale(1) translateY(0); }
+
+  .helen-photo-frame {
+    width: 190px; height: 190px;
+    margin: 0 auto 22px;
+    border-radius: 50%; overflow: hidden;
+    border: 8px solid #fef9f0;
+    box-shadow: 0 14px 36px rgba(80,40,10,0.55), 0 0 0 4px rgba(184,134,11,0.65), 0 0 60px rgba(254,230,180,0.8);
+    background: linear-gradient(135deg, #ffd6a5, #d4a373);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 5rem;
+  }
+  .helen-photo-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .modal-text { font-size: 1.5rem; color: var(--brown); margin-bottom: 28px; line-height: 1.5; font-weight: 500; }
+
+  .btn-start {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--deep-gold) 100%);
+    color: white; border: none;
+    padding: 20px 52px; border-radius: 60px;
+    font-size: 1.35rem; font-weight: 700;
+    font-family: Georgia, serif; cursor: pointer;
+    box-shadow: 0 12px 30px rgba(184,134,11,0.6), inset 0 -3px 0 rgba(0,0,0,0.18);
+    transition: transform 0.2s, box-shadow 0.2s;
+    min-height: 64px;
+    font-variant: small-caps; letter-spacing: 1px;
+  }
+  .btn-start:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(184,134,11,0.75), inset 0 -3px 0 rgba(0,0,0,0.18); }
+  .btn-start:active { transform: translateY(0) scale(0.97); }
+
+  .hearts-container { position: fixed; inset: 0; pointer-events: none; z-index: 4500; overflow: hidden; }
+  .heart { position: absolute; top: -60px; font-size: 2rem; animation: fall linear forwards; opacity: 0.9; filter: drop-shadow(0 0 6px rgba(255,150,180,0.7)); }
+  @keyframes fall {
+    0% { transform: translateY(-10vh) rotate(0deg) scale(0.8); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(115vh) rotate(360deg) scale(1.2); opacity: 0; }
+  }
+
+  @media (max-width: 1100px) {
+    .cards-panel { flex: 0 0 280px; }
+    .card { font-size: 15px; padding: 10px 12px; }
+    .slot { font-size: 13px; min-width: 68px; }
+    .slot .slot-name { font-size: 11px; }
+    .title-text { font-size: 1.9rem; letter-spacing: 2px; }
+    .title-tree { width: 40px; height: 40px; }
+  }
+  @media (max-width: 900px) {
+    .game-wrapper { padding: 8px; gap: 8px; }
+    .title-text { font-size: 1.6rem; letter-spacing: 2px; }
+    .title-bar { padding: 8px 14px; gap: 12px; border-radius: 14px; }
+    .title-tree { width: 34px; height: 34px; }
+    .music-toggle { width: 50px; height: 50px; font-size: 1.4rem; top: 12px; right: 12px; }
+    .main-layout { flex-direction: column; gap: 8px; }
+    .cards-panel { flex: 0 0 auto; max-width: 100%; max-height: 155px; padding: 8px; border-radius: 14px; }
+    .panel-title { font-size: 0.88rem; padding-bottom: 4px; }
+    .cards-list { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; gap: 8px; padding: 4px 2px 6px; scroll-snap-type: x mandatory; }
+    .cards-list::-webkit-scrollbar { height: 6px; }
+    .card { flex: 0 0 220px; font-size: 14px; padding: 9px 11px; scroll-snap-align: start; }
+    .album-wrap { flex: 1 1 auto; min-height: 0; }
+    .slot { min-width: 60px; min-height: 42px; }
+    .slot .slot-number { font-size: 12px; }
+    .slot .gender { width: 16px; height: 16px; font-size: 10px; }
+    .slot .slot-name { font-size: 10px; }
+    .slot .slot-dates { font-size: 9px; }
+    .plus-symbol { font-size: 18px; }
+  }
+  @media (max-width: 560px) {
+    .title-text { font-size: 1.25rem; letter-spacing: 1.5px; }
+    .title-tree { width: 28px; height: 28px; }
+    .title-bar { padding: 6px 10px; gap: 8px; border-radius: 12px; }
+    .music-toggle { width: 44px; height: 44px; font-size: 1.2rem; top: 8px; right: 8px; }
+    .cards-panel { max-height: 130px; padding: 6px; }
+    .panel-title { font-size: 0.82rem; }
+    .card { flex: 0 0 190px; font-size: 13px; padding: 8px 10px; border-radius: 10px; }
+    .slot { min-width: 50px; min-height: 36px; border-radius: 8px; padding: 2px 2px; }
+    .slot .slot-number { font-size: 10px; gap: 2px; }
+    .slot .gender { width: 13px; height: 13px; font-size: 8px; }
+    .slot .slot-name { font-size: 8.5px; margin-top: 0; }
+    .slot .slot-dates { font-size: 7.5px; }
+    .plus-symbol { font-size: 15px; }
+    .modal-card { padding: 30px 22px 28px; border-radius: 26px; }
+    .modal-text { font-size: 1.15rem; margin-bottom: 20px; }
+    .helen-photo-frame { width: 140px; height: 140px; font-size: 3.5rem; border-width: 6px; }
+    .btn-start { padding: 16px 36px; font-size: 1.15rem; min-height: 54px; }
+  }
+  @media (max-width: 400px) {
+    .title-text { font-size: 1.05rem; letter-spacing: 1px; }
+    .title-tree { width: 22px; height: 22px; }
+    .card { flex: 0 0 170px; font-size: 12.5px; padding: 7px 9px; }
+    .slot { min-width: 42px; min-height: 32px; }
+    .slot .slot-number { font-size: 9px; }
+    .slot .slot-name { font-size: 7.5px; }
+    .slot .gender { width: 11px; height: 11px; font-size: 7px; }
+  }
+  em, i { font-style: normal; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="room-bg"></div>
+
+<button class="music-toggle" id="musicToggle" aria-label="Toggle music" title="Music on/off">
+  🎵<span class="slash"></span>
+</button>
+
+<div class="game-wrapper">
+  <div class="title-bar">
+    <svg class="title-tree" viewBox="0 0 60 60" width="44" height="44" aria-hidden="true">
+      <rect x="28" y="34" width="4" height="20" rx="2" fill="#8b6f47"/>
+      <path d="M30 40 Q20 36 14 30" stroke="#8b6f47" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M30 40 Q40 36 46 30" stroke="#8b6f47" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="30" cy="22" r="14" fill="#7ba05b"/>
+      <circle cx="14" cy="25" r="9" fill="#8db26b"/>
+      <circle cx="46" cy="25" r="10" fill="#8db26b"/>
+      <circle cx="22" cy="15" r="7" fill="#a3c47d"/>
+      <circle cx="38" cy="15" r="7" fill="#a3c47d"/>
+      <circle cx="30" cy="30" r="3" fill="#d4a373"/>
+    </svg>
+    <div class="title-text"><span class="helen">Helen's</span> <span class="ft">Family Tree</span></div>
+    <svg class="title-tree" viewBox="0 0 60 60" width="44" height="44" aria-hidden="true">
+      <rect x="28" y="34" width="4" height="20" rx="2" fill="#8b6f47"/>
+      <path d="M30 40 Q20 36 14 30" stroke="#8b6f47" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M30 40 Q40 36 46 30" stroke="#8b6f47" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="30" cy="22" r="14" fill="#7ba05b"/>
+      <circle cx="14" cy="25" r="9" fill="#8db26b"/>
+      <circle cx="46" cy="25" r="10" fill="#8db26b"/>
+      <circle cx="22" cy="15" r="7" fill="#a3c47d"/>
+      <circle cx="38" cy="15" r="7" fill="#a3c47d"/>
+      <circle cx="30" cy="30" r="3" fill="#d4a373"/>
+    </svg>
+  </div>
+
+  <div class="main-layout">
+    <div class="cards-panel">
+      <div class="panel-title">📜 Family Members</div>
+      <div class="cards-list" id="cardsList"></div>
+    </div>
+    <div class="album-wrap">
+      <div class="album">
+        <div class="tree-container" id="treeContainer">
+          <svg class="tree-svg" id="treeSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="hearts-container" id="heartsContainer"></div>
+
+<div class="modal active" id="introModal">
+  <div class="modal-card">
+    <div class="helen-photo-frame">
+      <img src="1.png" alt="Helen" onerror="this.replaceWith(document.createTextNode('👧'))">
+    </div>
+    <div class="modal-text">Hi! My name is Helen. Can you help me make my family tree?</div>
+    <button class="btn-start" id="startBtn">Let's start! 🌿</button>
+  </div>
+</div>
+
+<div class="modal" id="endModal">
+  <div class="modal-card">
+    <div class="helen-photo-frame">
+      <img src="2.png" alt="Helen" onerror="this.replaceWith(document.createTextNode('👧💖'))">
+    </div>
+    <div class="modal-text">Thank you so much! You helped me a lot. Now my family is together!</div>
+    <button class="btn-start" id="playAgainBtn">Play again 🔄</button>
+  </div>
+</div>
+
+<audio id="bgMusic" src="gentle-breeze_90417.mp3" loop preload="auto"></audio>
+
+<script>
+(function() {
+  'use strict';
+
+  const CARDS = [
+    { id: 'c1',  text: 'My name is Helen and this is my family.',                 targets: ['me'],       short: 'Helen' },
+    { id: 'c2',  text: "My brother's name is Sam. He's fifteen.",                 targets: ['13'],       short: 'Sam' },
+    { id: 'c3',  text: "My mum's name is Maggie.",                                targets: ['8'],        short: 'Maggie' },
+    { id: 'c4',  text: "My dad's name is Jack. He's Australian.",                 targets: ['9'],        short: 'Jack' },
+    { id: 'c5',  text: "My mum's sister is called Emma.",                         targets: ['6'],        short: 'Emma' },
+    { id: 'c6',  text: "Emma's husband is Phil.",                                 targets: ['7'],        short: 'Phil' },
+    { id: 'c7',  text: "Emma and Phil's son, Dan, is three years old.",           targets: ['12'],       short: 'Dan' },
+    { id: 'c8',  text: "My grandma's name is Daphne. She's 83.",                  targets: ['1'],        short: 'Daphne' },
+    { id: 'c9',  text: "Daphne's husband, my grandpa, is Harold.",                targets: ['2'],        short: 'Harold' },
+    { id: 'c10', text: "My dad's brother is called Nick.",                        targets: ['10'],       short: 'Nick' },
+    { id: 'c11', text: "Jack and Nick's father's name is Brian.",                 targets: ['5'],        short: 'Brian' },
+    { id: 'c12', text: "Jack and Nick's mother's name is Elsie.",                 targets: ['3'],        short: 'Elsie' },
+    { id: 'c13', text: "Elsie's new husband's name is Peter.",                    targets: ['4'],        short: 'Peter' },
+    { id: 'c14', text: "Nick's wife's name is Melissa.",                          targets: ['11'],       short: 'Melissa' },
+    { id: 'c15', text: "Nick and Melissa's daughters are called Lucy and Fiona.", targets: ['14','15'],  short: 'Lucy & Fiona',
+      pairLabels: { '14': 'Lucy', '15': 'Fiona' } },
+    { id: 'c16', text: "Nick and Melissa's sons are called Aaron and James.",     targets: ['16','17'],  short: 'Aaron & James',
+      pairLabels: { '16': 'Aaron', '17': 'James' } }
+  ];
+
+  // Слот 4 — теперь МУЖСКОЙ (♂), так как Peter — мужчина
+  const SLOTS = [
+    { id: '1',   x: 10, y: 12, num: '1',  gender: 'f' },
+    { id: '2',   x: 26, y: 12, num: '2',  gender: 'm' },
+    { id: '3',   x: 52, y: 12, num: '3',  gender: 'f' },
+    { id: '4',   x: 74, y: 4,  num: '4',  gender: 'm' },  // ← ИСПРАВЛЕНО: было 'f', стало 'm'
+    { id: '5',   x: 74, y: 21, num: '5',  gender: 'm', dates: '1940 – 1973' },
+    { id: '6',   x: 10, y: 42, num: '6',  gender: 'f' },
+    { id: '7',   x: 10, y: 56, num: '7',  gender: 'm' },
+    { id: '8',   x: 31, y: 42, num: '8',  gender: 'f' },
+    { id: '9',   x: 52, y: 42, num: '9',  gender: 'm' },
+    { id: '10',  x: 74, y: 42, num: '10', gender: 'm' },
+    { id: '11',  x: 74, y: 56, num: '11', gender: 'f' },
+    { id: '12',  x: 14, y: 72, num: '12', gender: 'm' },
+    { id: 'me',  x: 38, y: 72, num: 'Me', gender: 'f' },
+    { id: '13',  x: 60, y: 72, num: '13', gender: 'm' },
+    { id: '14',  x: 14, y: 91, num: '14', gender: 'f' },
+    { id: '15',  x: 30, y: 91, num: '15', gender: 'f' },
+    { id: '16',  x: 55, y: 91, num: '16', gender: 'm' },
+    { id: '17',  x: 72, y: 91, num: '17', gender: 'm' }
+  ];
+
+  const state = {
+    score: 0, total: 16, filled: {}, placed: {},
+    isOver: false, started: false, audioCtx: null,
+    musicStarted: false, musicMuted: false
+  };
+
+  const cardsList       = document.getElementById('cardsList');
+  const treeContainer   = document.getElementById('treeContainer');
+  const treeSvg         = document.getElementById('treeSvg');
+  const toast           = document.getElementById('toast');
+  const introModal      = document.getElementById('introModal');
+  const endModal        = document.getElementById('endModal');
+  const startBtn        = document.getElementById('startBtn');
+  const playAgainBtn    = document.getElementById('playAgainBtn');
+  const heartsContainer = document.getElementById('heartsContainer');
+  const bgMusic         = document.getElementById('bgMusic');
+  const musicToggle     = document.getElementById('musicToggle');
+
+  function initAudio() {
+    if (!state.audioCtx) {
+      try { state.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+    }
+    if (state.audioCtx && state.audioCtx.state === 'suspended') state.audioCtx.resume();
+  }
+
+  function playDing() {
+    if (!state.audioCtx) return;
+    const ctx = state.audioCtx, now = ctx.currentTime;
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1400, now);
+    osc.frequency.exponentialRampToValueAtTime(1800, now + 0.06);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.25);
+  }
+
+  function playCorrect() {
+    if (!state.audioCtx) return;
+    const ctx = state.audioCtx, now = ctx.currentTime;
+    [1046.50, 1318.51, 1567.98].forEach((f, i) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = f;
+      const t = now + i * 0.09;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.35);
+    });
+  }
+
+  function playWrong() {
+    if (!state.audioCtx) return;
+    const ctx = state.audioCtx, now = ctx.currentTime;
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.linearRampToValueAtTime(150, now + 0.35);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.5);
+  }
+
+  function playFinal() {
+    if (!state.audioCtx) return;
+    const ctx = state.audioCtx, now = ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = f;
+      const t = now + i * 0.18;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.6);
+    });
+  }
+
+  function showToast(text, type) {
+    toast.textContent = text;
+    toast.className = 'toast show ' + (type || '');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { toast.className = 'toast ' + (type || ''); }, 1500);
+  }
+
+  function renderCards() {
+    cardsList.innerHTML = '';
+    CARDS.forEach(card => {
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.dataset.id = card.id;
+      el.textContent = card.text;
+      attachDrag(el, card);
+      cardsList.appendChild(el);
+    });
+  }
+
+  function renderSlots() {
+    Array.from(treeContainer.querySelectorAll('.slot, .plus-symbol')).forEach(s => s.remove());
+
+    SLOTS.forEach(slot => {
+      const el = document.createElement('div');
+      el.className = 'slot';
+      el.dataset.slotId = slot.id;
+      el.style.left = slot.x + '%';
+      el.style.top = slot.y + '%';
+      const gClass = slot.gender === 'm' ? 'male' : 'female';
+      const gSym = slot.gender === 'm' ? '♂' : '♀';
+      let html = '<span class="slot-number">' + slot.num + ' <span class="gender ' + gClass + '">' + gSym + '</span></span>';
+      if (slot.dates) html += '<span class="slot-dates">' + slot.dates + '</span>';
+      html += '<span class="slot-name"></span>';
+      el.innerHTML = html;
+      treeContainer.appendChild(el);
+    });
+
+    const plusPositions = [
+      { x: 10, y: 49 },
+      { x: 74, y: 49 }
+    ];
+    plusPositions.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'plus-symbol';
+      el.textContent = '+';
+      el.style.left = p.x + '%';
+      el.style.top = p.y + '%';
+      treeContainer.appendChild(el);
+    });
+  }
+
+  function drawTree() {
+    const containerRect = treeContainer.getBoundingClientRect();
+    const W = containerRect.width, H = containerRect.height;
+    treeSvg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    treeSvg.setAttribute('width', W);
+    treeSvg.setAttribute('height', H);
+    treeSvg.innerHTML = '';
+
+    function rect(id) {
+      const el = treeContainer.querySelector('[data-slot-id="' + id + '"]');
+      if (!el) return { x: 0, y: 0, w: 0, h: 0, left: 0, right: 0, top: 0, bottom: 0, cx: 0, cy: 0 };
+      const r = el.getBoundingClientRect();
+      const x = r.left - containerRect.left;
+      const y = r.top - containerRect.top;
+      return {
+        x: x, y: y, w: r.width, h: r.height,
+        left: x, right: x + r.width, top: y, bottom: y + r.height,
+        cx: x + r.width / 2, cy: y + r.height / 2
+      };
+    }
+
+    function drawTwig(points, opts) {
+      opts = opts || {};
+      if (points.length < 2) return;
+      const d = 'M ' + points.map(p => p.x + ' ' + p.y).join(' L ');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', opts.color || '#8b6f47');
+      path.setAttribute('stroke-width', opts.width || 1.8);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      path.setAttribute('opacity', opts.opacity || 0.9);
+      if (opts.dashed) path.setAttribute('stroke-dasharray', '5 5');
+      treeSvg.appendChild(path);
+
+      if (opts.leaves !== false) {
+        for (let i = 0; i < points.length - 1; i++) {
+          const p1 = points[i], p2 = points[i + 1];
+          const segLen = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+          const leafCount = Math.max(1, Math.floor(segLen / 70));
+          const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+          for (let j = 0; j < leafCount; j++) {
+            const t = (j + 0.5) / leafCount;
+            const lx = p1.x + (p2.x - p1.x) * t;
+            const ly = p1.y + (p2.y - p1.y) * t;
+            const side = (j % 2 === 0) ? 1 : -1;
+            const lAngle = angle + side * 0.65;
+            const leafX = lx + Math.cos(lAngle) * 7;
+            const leafY = ly + Math.sin(lAngle) * 7;
+            const leaf = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            leaf.setAttribute('cx', leafX);
+            leaf.setAttribute('cy', leafY);
+            leaf.setAttribute('rx', 4);
+            leaf.setAttribute('ry', 2);
+            leaf.setAttribute('transform', 'rotate(' + (lAngle * 180 / Math.PI) + ' ' + leafX + ' ' + leafY + ')');
+            leaf.setAttribute('fill', opts.leafColor || '#7ba05b');
+            leaf.setAttribute('opacity', '0.85');
+            treeSvg.appendChild(leaf);
+          }
+        }
+      }
+    }
+
+    function couple(id1, id2, opts) {
+      opts = opts || {};
+      const a = rect(id1), b = rect(id2);
+      const dx = Math.abs(a.cx - b.cx);
+      const dy = Math.abs(a.cy - b.cy);
+      let p1, p2;
+      if (dx > dy) {
+        if (a.cx < b.cx) { p1 = { x: a.right, y: a.cy }; p2 = { x: b.left, y: b.cy }; }
+        else { p1 = { x: b.right, y: b.cy }; p2 = { x: a.left, y: a.cy }; }
+      } else {
+        if (a.cy < b.cy) { p1 = { x: a.cx, y: a.bottom }; p2 = { x: b.cx, y: b.top }; }
+        else { p1 = { x: b.cx, y: b.bottom }; p2 = { x: a.cx, y: a.top }; }
+      }
+      drawTwig([p1, p2], {
+        color: opts.color || '#a0522d',
+        width: opts.width || 2,
+        dashed: opts.dashed !== false,
+        opacity: 0.9,
+        leaves: false
+      });
+    }
+
+    function childAnchor(childSpec) {
+      const ids = Array.isArray(childSpec) ? childSpec : [childSpec];
+      const rects = ids.map(rect);
+      const left = Math.min(...rects.map(r => r.left)) - 10;
+      const right = Math.max(...rects.map(r => r.right)) + 10;
+      const top = Math.min(...rects.map(r => r.top)) - 10;
+      return { cx: (left + right) / 2, top: top };
+    }
+
+    function family(parent1, parent2, children, opts) {
+      opts = opts || {};
+      const p1 = rect(parent1), p2 = rect(parent2);
+
+      const dx = Math.abs(p1.cx - p2.cx);
+      const dy = Math.abs(p1.cy - p2.cy);
+      let dropX, dropY;
+      if (dx > dy) {
+        dropX = (p1.cx + p2.cx) / 2;
+        dropY = Math.max(p1.bottom, p2.bottom);
+      } else {
+        const lower = p1.bottom > p2.bottom ? p1 : p2;
+        dropX = lower.cx;
+        dropY = lower.bottom;
+      }
+
+      const anchors = children.map(childAnchor);
+      const childTop = Math.min(...anchors.map(a => a.top));
+
+      let busY;
+      if (opts.busYPercent !== undefined) {
+        busY = H * opts.busYPercent / 100;
+      } else {
+        busY = dropY + (childTop - dropY) * 0.5;
+      }
+
+      drawTwig([{ x: dropX, y: dropY }, { x: dropX, y: busY }], {
+        color: '#8b6f47', width: 1.8, dashed: true, leaves: true, leafColor: '#7ba05b'
+      });
+
+      const xs = anchors.map(a => a.cx).concat([dropX]);
+      const busLeft = Math.min(...xs);
+      const busRight = Math.max(...xs);
+      drawTwig([{ x: busLeft, y: busY }, { x: busRight, y: busY }], {
+        color: '#8b6f47', width: 1.8, dashed: true, leaves: true, leafColor: '#7ba05b'
+      });
+
+      anchors.forEach(a => {
+        drawTwig([{ x: a.cx, y: busY }, { x: a.cx, y: a.top }], {
+          color: '#8b6f47', width: 1.8, dashed: true, leaves: true, leafColor: '#7ba05b'
+        });
+      });
+    }
+
+    function familyFromConnection(parent1, parent2, children, t) {
+      const p1 = rect(parent1), p2 = rect(parent2);
+      const dropX = p1.cx + (p2.cx - p1.cx) * t;
+      const dropY = p1.cy + (p2.cy - p1.cy) * t;
+
+      const anchors = children.map(childAnchor);
+      const childTop = Math.min(...anchors.map(a => a.top));
+      const busY = dropY + (childTop - dropY) * 0.5;
+
+      drawTwig([{ x: dropX, y: dropY }, { x: dropX, y: busY }], {
+        color: '#8b6f47', width: 1.8, dashed: true, leaves: true, leafColor: '#7ba05b'
+      });
+
+      const xs = anchors.map(a => a.cx).concat([dropX]);
+      const busLeft = Math.min(...xs);
+      const busRight = Math.max(...xs);
+      drawTwig([{ x: busLeft, y: busY }, { x: busRight, y: busY }], {
+        color: '#8b6f47', width: 1.8, dashed: true, leaves: true, leafColor: '#7ba05b'
+      });
+
+      anchors.forEach(a => {
+        drawTwig([{ x: a.cx, y: busY }, { x: a.cx, y: a.top }], {
+          color: '#8b6f47', width: 1.8, dashed: true, leaves: true, leafColor: '#7ba05b'
+        });
+      });
+    }
+
+    function groupFrame(ids, opts) {
+      opts = opts || {};
+      const rects = ids.map(rect);
+      const padding = opts.padding || 10;
+      const left = Math.min(...rects.map(r => r.left)) - padding;
+      const right = Math.max(...rects.map(r => r.right)) + padding;
+      const top = Math.min(...rects.map(r => r.top)) - padding;
+      const bottom = Math.max(...rects.map(r => r.bottom)) + padding;
+
+      const frame = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      frame.setAttribute('x', left);
+      frame.setAttribute('y', top);
+      frame.setAttribute('width', right - left);
+      frame.setAttribute('height', bottom - top);
+      frame.setAttribute('rx', opts.rx || 18);
+      frame.setAttribute('ry', opts.ry || 18);
+      frame.setAttribute('fill', opts.fill || 'none');
+      frame.setAttribute('stroke', opts.color || '#a0522d');
+      frame.setAttribute('stroke-width', opts.width || 2.5);
+      if (opts.dashed) frame.setAttribute('stroke-dasharray', opts.dashArray || '8 6');
+      frame.setAttribute('opacity', opts.opacity || 0.8);
+      treeSvg.appendChild(frame);
+    }
+
+    groupFrame(['6', '7'], {
+      color: '#a0522d', width: 2.5, dashed: true, dashArray: '8 6',
+      fill: 'rgba(160,82,45,0.06)', padding: 10, rx: 16
+    });
+    groupFrame(['10', '11'], {
+      color: '#a0522d', width: 2.5, dashed: true, dashArray: '8 6',
+      fill: 'rgba(160,82,45,0.06)', padding: 10, rx: 16
+    });
+    groupFrame(['14', '15'], {
+      color: '#7ba05b', width: 2.5, dashed: false,
+      fill: 'rgba(123,160,91,0.10)', padding: 12, rx: 16
+    });
+    groupFrame(['16', '17'], {
+      color: '#7ba05b', width: 2.5, dashed: false,
+      fill: 'rgba(123,160,91,0.10)', padding: 12, rx: 16
+    });
+
+    couple('1', '2', { dashed: true, color: '#a0522d' });
+    couple('8', '9', { dashed: true, color: '#a0522d' });
+    couple('6', '7', { dashed: false, color: '#a0522d' });
+    couple('10', '11', { dashed: false, color: '#a0522d' });
+
+    {
+      const a = rect('3'), b = rect('4');
+      drawTwig([{ x: a.cx + 20, y: a.top }, { x: b.cx, y: b.bottom }], {
+        color: '#b8860b', width: 1.8, dashed: true, opacity: 0.9, leaves: false
+      });
+    }
+
+    {
+      const a = rect('3'), b = rect('5');
+      drawTwig([{ x: a.right, y: a.cy }, { x: b.left, y: b.cy }], {
+        color: '#b8860b', width: 1.8, dashed: true, opacity: 0.9, leaves: false
+      });
+    }
+
+    family('1', '2', ['6', '8']);
+    family('6', '7', ['12']);
+    family('8', '9', ['me', '13']);
+    family('10', '11', [['14','15'], ['16','17']], { busYPercent: 83 });
+    familyFromConnection('3', '5', ['9', '10'], 0.5);
+  }
+
+  const HIT_RADIUS = 120;
+
+  function attachDrag(cardEl, card) {
+    cardEl.addEventListener('pointerdown', (e) => {
+      if (state.isOver || !state.started) return;
+      if (cardEl.classList.contains('placed')) return;
+      if (e.button !== undefined && e.button !== 0) return;
+
+      e.preventDefault();
+      initAudio();
+      playDing();
+
+      const startX = e.clientX, startY = e.clientY;
+      let dragging = false, ghost = null, activeSlot = null;
+
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX, dy = ev.clientY - startY;
+        if (!dragging && (Math.abs(dx) + Math.abs(dy)) > 5) {
+          dragging = true;
+          ghost = createGhost(card.text, ev.clientX, ev.clientY);
+          cardEl.classList.add('dragging');
+        }
+        if (dragging && ghost) {
+          ghost.style.left = ev.clientX + 'px';
+          ghost.style.top  = ev.clientY + 'px';
+          const target = findNearestSlot(ev.clientX, ev.clientY);
+          if (activeSlot && activeSlot !== target) activeSlot.classList.remove('drag-over');
+          if (target) { target.classList.add('drag-over'); activeSlot = target; }
+          else activeSlot = null;
+        }
+      };
+
+      const onUp = (ev) => {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointercancel', onUp);
+        cardEl.classList.remove('dragging');
+        if (activeSlot) activeSlot.classList.remove('drag-over');
+        treeContainer.querySelectorAll('.slot').forEach(s => s.classList.remove('drag-over'));
+        if (dragging && ghost) {
+          ghost.remove();
+          const target = findNearestSlot(ev.clientX, ev.clientY);
+          if (target) attemptDrop(card, cardEl, target);
+        }
+        ghost = null; dragging = false; activeSlot = null;
+      };
+
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointercancel', onUp);
+    });
+  }
+
+  function createGhost(text, x, y) {
+    const ghost = document.createElement('div');
+    ghost.className = 'card-ghost';
+    ghost.textContent = text;
+    ghost.style.left = x + 'px';
+    ghost.style.top = y + 'px';
+    document.body.appendChild(ghost);
+    return ghost;
+  }
+
+  function findNearestSlot(x, y) {
+    const slots = treeContainer.querySelectorAll('.slot:not(.filled)');
+    let best = null, bestDist = Infinity;
+    slots.forEach(slot => {
+      const r = slot.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dist = Math.hypot(x - cx, y - cy);
+      let boxDist = 0;
+      if (x < r.left) boxDist = r.left - x;
+      else if (x > r.right) boxDist = x - r.right;
+      if (y < r.top) boxDist = Math.max(boxDist, r.top - y);
+      else if (y > r.bottom) boxDist = Math.max(boxDist, y - r.bottom);
+      const effectiveDist = boxDist + dist * 0.2;
+      if (effectiveDist < bestDist && (boxDist <= HIT_RADIUS || dist <= HIT_RADIUS)) {
+        bestDist = effectiveDist; best = slot;
+      }
+    });
+    return best;
+  }
+
+  function attemptDrop(card, cardEl, slotEl) {
+    const slotId = slotEl.dataset.slotId;
+    const isCorrect = card.targets.includes(slotId);
+
+    if (isCorrect) {
+      playCorrect();
+      showToast('Correct!', 'correct');
+      fillSlot(slotEl, card.short);
+      slotEl.classList.add('correct-flash');
+      setTimeout(() => slotEl.classList.remove('correct-flash'), 800);
+      state.filled[slotId] = card.id;
+      state.placed[card.id] = slotId;
+      cardEl.classList.add('placed');
+      state.score++;
+
+      if (card.pairLabels) {
+        Object.keys(card.pairLabels).forEach(otherId => {
+          if (otherId === slotId) return;
+          if (state.filled[otherId]) return;
+          const otherSlot = treeContainer.querySelector('[data-slot-id="' + otherId + '"]');
+          if (!otherSlot) return;
+          fillSlot(otherSlot, card.pairLabels[otherId]);
+          otherSlot.classList.add('correct-flash');
+          setTimeout(() => otherSlot.classList.remove('correct-flash'), 800);
+          state.filled[otherId] = card.id + '-pair';
+        });
+      }
+      if (Object.keys(state.filled).length >= SLOTS.length) {
+        setTimeout(endGame, 900);
+      }
+    } else {
+      playWrong();
+      showToast('Try again!', 'wrong');
+      slotEl.classList.add('wrong-flash');
+      setTimeout(() => slotEl.classList.remove('wrong-flash'), 700);
+    }
+  }
+
+  function fillSlot(slotEl, name) {
+    slotEl.classList.add('filled');
+    const nameEl = slotEl.querySelector('.slot-name');
+    if (nameEl) {
+      nameEl.textContent = name;
+      nameEl.style.color = '#059669';
+    }
+  }
+
+  function endGame() {
+    if (state.isOver) return;
+    state.isOver = true;
+    cardsList.style.pointerEvents = 'none';
+    playFinal();
+    startHearts();
+    setTimeout(() => endModal.classList.add('active'), 600);
+  }
+
+  function startHearts() {
+    const hearts = ['❤️', '💖', '💕', '💗', '💓', '🌸', '💝'];
+    let count = 0;
+    const interval = setInterval(() => {
+      if (count >= 40) { clearInterval(interval); return; }
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+      heart.style.left = Math.random() * 100 + '%';
+      const duration = 5 + Math.random() * 4;
+      heart.style.animationDuration = duration + 's';
+      heart.style.fontSize = (1.2 + Math.random() * 1.5) + 'rem';
+      heartsContainer.appendChild(heart);
+      count++;
+      setTimeout(() => heart.remove(), duration * 1000);
+    }, 180);
+  }
+
+  function startMusic() {
+    if (!bgMusic || state.musicMuted) return;
+    bgMusic.volume = 0.35;
+    const p = bgMusic.play();
+    if (p && p.catch) p.catch(() => {});
+    state.musicStarted = true;
+  }
+
+  musicToggle.addEventListener('click', () => {
+    state.musicMuted = !state.musicMuted;
+    if (state.musicMuted) {
+      musicToggle.classList.add('muted');
+      bgMusic.pause();
+    } else {
+      musicToggle.classList.remove('muted');
+      startMusic();
+    }
+  });
+
+  function startGame() {
+    initAudio();
+    startMusic();
+    state.score = 0;
+    state.filled = {};
+    state.placed = {};
+    state.isOver = false;
+    state.started = true;
+    cardsList.style.pointerEvents = 'auto';
+    heartsContainer.innerHTML = '';
+    renderCards();
+    renderSlots();
+    requestAnimationFrame(() => { requestAnimationFrame(drawTree); });
+  }
+
+  function resetGame() {
+    endModal.classList.remove('active');
+    heartsContainer.innerHTML = '';
+    setTimeout(startGame, 300);
+  }
+
+  startBtn.addEventListener('click', () => {
+    initAudio();
+    introModal.classList.remove('active');
+    startGame();
+  });
+
+  playAgainBtn.addEventListener('click', resetGame);
+
+  window.addEventListener('resize', () => {
+    if (state.started) requestAnimationFrame(drawTree);
+  });
+
+  document.addEventListener('pointerdown', function once() {
+    initAudio();
+    document.removeEventListener('pointerdown', once);
+  }, { once: true });
+
+  renderSlots();
+  window.addEventListener('load', () => {
+    requestAnimationFrame(() => requestAnimationFrame(drawTree));
+  });
+
+})();
+</script>
+</body>
+</html>
